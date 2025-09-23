@@ -1,3 +1,4 @@
+import importlib
 from pathlib import Path
 import sys
 import matplotlib
@@ -19,6 +20,9 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
+from data_manager import DataManager, DataManagerNavigator
+from miniWidget import MiniWidget
+import miniWidget
 
 
 class matplot_viewer(QMainWindow):
@@ -26,6 +30,9 @@ class matplot_viewer(QMainWindow):
         super().__init__()
         self.set_up()
         self.dir_path = None
+        self.data_Manager = None
+        self.data_Navigator = None
+        # A button to trigger the reload
 
     def set_up(self):
         self.state = False
@@ -71,6 +78,11 @@ class matplot_viewer(QMainWindow):
         self.layout.addWidget(self.canvas2, 1, 2)
         self.push_button = QPushButton("toggle poly2d")
         self.push_button.clicked.connect(self.handle_click)
+
+        self.reload_button = QPushButton("Reload MiniWidget UI")
+        self.reload_button.clicked.connect(self.reload)
+        self.layout.addWidget(self.reload_button, 3, 0)
+
         self.layout.addWidget(self.push_button, 2, 2)
         self.main_window.setLayout(self.layout)
 
@@ -146,6 +158,43 @@ class matplot_viewer(QMainWindow):
         if dir_path:
             print(f"Selected directory: {dir_path}")
             self.dir_path = Path(dir_path)
+            self.data_Manager, self.data_Navigator = self.set_up_Data_Manager(dir_path)
+            self.add_manifest_box()
+
+    def set_up_Data_Manager(self, root_dir):
+        data_Manager = DataManager(root_dir)
+        data_Navigator = DataManagerNavigator(data_Manager)
+        return data_Manager, data_Navigator
+
+    def add_manifest_box(self):
+        widget = QWidget()
+        # self.vbox.setSpacing(1j)
+        manifest = self.data_Manager.get_Manifest()
+        layout = QVBoxLayout()
+        print("this is a test to see if manifest is here")
+        print(manifest)
+        for item in manifest.keys():
+            mini = MiniWidget(str(item))
+            layout.addWidget(mini)
+        widget.setLayout(layout)
+        self.layout.addWidget(widget, 1, 0)
+
+    def reload(self, widget):
+        print("--- Reloading UI ---")
+        item = self.layout.itemAtPosition(1, 0)
+        widget_delete = item.widget()
+        print(item)
+        self.layout.removeWidget(widget_delete)
+        # 1. Reload the module containing the widget class
+        importlib.reload(miniWidget)
+
+        # 2. Delete the old widget instance
+        # self.add_manifest_box()
+        # 3. Create a new instance from the reloaded class
+        #     widget_delete.deleteLater()
+        print("Widget at (0,0) has been deleted.")
+
+        # 4. Add the new instance to the layout:
 
 
 if __name__ == "__main__":
