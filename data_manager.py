@@ -26,7 +26,7 @@ class DataManager:
             yield vol, seg
 
     def loaddata(self, data):
-        data, header = nrrd.read(data)
+        data, header = nrrd.read(data, index_order="C")
         return data, header
 
     def load_data_pair(self, vol_path, seg_path):
@@ -34,7 +34,9 @@ class DataManager:
         vol_data, vol_header = self.loaddata(vol_path)
         seg_data, seg_header = self.loaddata(seg_path)
         # Return whatever format is most useful for you
-        return (vol_data, vol_header), (seg_data, seg_header)
+        # return (vol_data, vol_header), (seg_data, seg_header)
+
+        return vol_data, seg_data
 
     # return a generator object
     def __iter__(self):
@@ -93,7 +95,10 @@ class DataManagerNavigator:
     def next(self):
         """Moves to the next item and returns it."""
         if self._position >= len(self.data_manager) - 1:
-            raise IndexError("Already at the last item. Cannot go next.")
+            self._position = 0
+        
+
+        print(self._position)
         self._position += 1
         return self.current()
 

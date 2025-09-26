@@ -20,6 +20,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
+from Plot_manager import PlotManager
 from data_manager import DataManager, DataManagerNavigator
 from miniWidget import MiniWidget
 import miniWidget
@@ -63,21 +64,35 @@ class matplot_viewer(QMainWindow):
         self.layout.addWidget(self.file_widget, 0, 0)
 
         # Fig 1
-        self.fig1 = Figure(figsize=(6, 8))
+        self.fig1 = Figure(figsize=(15, 15))
         self.canvas1 = FigureCanvas(self.fig1)
-        self.create_plot(self.fig1, self.canvas1, self.state)
+
         self.toolbar1 = NavigationToolbar(self.canvas1, self.main_window)
         self.layout.addWidget(self.toolbar1, 0, 1)
         self.layout.addWidget(self.canvas1, 1, 1)
-        # Fig 2-----
-        self.fig2 = Figure(figsize=(4, 3))
-        self.canvas2 = FigureCanvas(self.fig2)
-        self.toolbar2 = NavigationToolbar(self.canvas2, self.main_window)
-        self.create_plot(self.fig2, self.canvas2, self.state)
-        self.layout.addWidget(self.toolbar2, 0, 2)
-        self.layout.addWidget(self.canvas2, 1, 2)
-        self.push_button = QPushButton("toggle poly2d")
+
+        self.push_button = QPushButton(" toggle visibility ")
+
+
         self.push_button.clicked.connect(self.handle_click)
+
+        self.PlotManager = None
+        self.next_button=QPushButton(" Next Slice ")
+        self.next_button.clicked.connect(self.next_click
+                                         )
+        self.layout.addWidget(self.next_button,2,1)
+        
+        
+
+        # Fig 2-----
+        # self.fig2 = Figure(figsize=(4, 3))
+        # self.canvas2 = FigureCanvas(self.fig2)
+        # self.toolbar2 = NavigationToolbar(self.canvas2, self.main_window)
+        # self.create_plot(self.fig2, self.canvas2, self.state)
+        # self.layout.addWidget(self.toolbar2, 0, 2)
+        # self.layout.addWidget(self.canvas2, 1, 2)
+        # self.push_button = QPushButton("toggle poly2d")
+        # self.push_button.clicked.connect(self.handle_click)
 
         self.reload_button = QPushButton("Reload MiniWidget UI")
         self.reload_button.clicked.connect(self.reload)
@@ -95,71 +110,32 @@ class matplot_viewer(QMainWindow):
         It updates the state and redraws both plots.
         """
         self.state_handle()  # Toggle the state
+        print("this is the state", self.state)
         print(f"Plot state toggled to: {self.state}")  # Optional: print current state
 
         # Redraw Fig 1 with the new state
-        self.create_plot(self.fig1, self.canvas1, self.state)
+        self.PlotManager.toggle_mask_visibility(self.state)
         # Redraw Fig 2 with the new state
 
     #        self.create_plot(self.fig2, self.canvas2, self.state)
-
-    def fit_polynomial(self, x, y, degree):
-        # Fit the polynomial
-        coefficients = np.polyfit(x, y, degree)
-
-        # Create a polynomial function from the coefficients
-        polynomial_function = np.poly1d(coefficients)
-
-        # Calculate the y-values based on the fitted polynomial
-        y_fitted = polynomial_function(x)
-
-        return coefficients, y_fitted
-
-    def create_plot(self, figure, canvas, state=False):
-        # Generate random data
-        figure.clear()
-        np.random.seed(42)
-        n_points = 50
-        x = np.random.uniform(0, 100, n_points)
-        y = 0.02 * x**2 + 2 * x + 10 + np.random.normal(0, 50, n_points)
-
-        # Create subplot
-        ax = figure.add_subplot(111)
-
-        # Your original plotting code
-        ax.scatter(x, y, alpha=0.7, color="#FF6B6B", s=60, label="Random Data")
-
-        # Add trend line
-        if state:
-            coefficients, y_fitted = self.fit_polynomial(x, y, 1)
-        else:
-            coefficients, y_fitted = self.fit_polynomial(x, y, 2)
-        ax.plot(
-            x,
-            y_fitted,
-            color="#4ECDC4",
-            linewidth=1,
-            label=f"Trend Line (y = {coefficients[0]:.2f}x + {coefficients[1]:.2f})",
-        )
-        # Customize the plot
-        ax.set_title("Random Data with Trend Line", fontsize=16, fontweight="bold")
-        ax.set_xlabel("X Values", fontsize=12)
-        ax.set_ylabel("Y Values", fontsize=12)
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-
-        # Apply tight layout and draw
-        figure.tight_layout()
-        canvas.draw()
+    def next_click(self):
+        self.data_Navigator.next()
+        self.PlotManager.display_plot()
+    
 
     def open_file(self):
         # Static method to open a directory dialog
+
+
         dir_path = QFileDialog.getExistingDirectory(self, "Select Directory")
         if dir_path:
             print(f"Selected directory: {dir_path}")
             self.dir_path = Path(dir_path)
             self.data_Manager, self.data_Navigator = self.set_up_Data_Manager(dir_path)
             self.add_manifest_box()
+            self.PlotManager = PlotManager(self.data_Navigator, self.fig1, self.canvas1)
+
+            self.PlotManager.display_plot()
 
     def set_up_Data_Manager(self, root_dir):
         data_Manager = DataManager(root_dir)
