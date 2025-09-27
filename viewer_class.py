@@ -128,7 +128,7 @@ class matplot_viewer(QMainWindow):
             self.dir_path = Path(dir_path)
             self.data_Manager, self.data_Navigator = self.set_up_Data_Manager(dir_path)
             self.add_manifest_box()
-            self.PlotManager = PlotManager(self.canvas1, self.canvas1)
+            self.PlotManager = PlotManager(self.canvas1,self.data_Navigator)
 
             self.PlotManager.display_plot()
 
