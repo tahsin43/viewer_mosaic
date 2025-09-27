@@ -96,9 +96,13 @@ class DataManagerNavigator:
         """Moves to the next item and returns it."""
         if self._position >= len(self.data_manager) - 1:
             self._position = 0
+            print(self._position)
+            return self.current()
+
         
 
         print(self._position)
+
         self._position += 1
         return self.current()
 

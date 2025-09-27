@@ -73,16 +73,12 @@ class matplot_viewer(QMainWindow):
 
         self.push_button = QPushButton(" toggle visibility ")
 
-
         self.push_button.clicked.connect(self.handle_click)
 
         self.PlotManager = None
-        self.next_button=QPushButton(" Next Slice ")
-        self.next_button.clicked.connect(self.next_click
-                                         )
-        self.layout.addWidget(self.next_button,2,1)
-        
-        
+        self.next_button = QPushButton(" Next Slice ")
+        self.next_button.clicked.connect(self.next_click)
+        self.layout.addWidget(self.next_button, 2, 1)
 
         # Fig 2-----
         # self.fig2 = Figure(figsize=(4, 3))
@@ -120,12 +116,11 @@ class matplot_viewer(QMainWindow):
     #        self.create_plot(self.fig2, self.canvas2, self.state)
     def next_click(self):
         self.data_Navigator.next()
+
         self.PlotManager.display_plot()
-    
 
     def open_file(self):
         # Static method to open a directory dialog
-
 
         dir_path = QFileDialog.getExistingDirectory(self, "Select Directory")
         if dir_path:
@@ -133,7 +128,7 @@ class matplot_viewer(QMainWindow):
             self.dir_path = Path(dir_path)
             self.data_Manager, self.data_Navigator = self.set_up_Data_Manager(dir_path)
             self.add_manifest_box()
-            self.PlotManager = PlotManager(self.data_Navigator, self.fig1, self.canvas1)
+            self.PlotManager = PlotManager(self.canvas1, self.canvas1)
 
             self.PlotManager.display_plot()
 

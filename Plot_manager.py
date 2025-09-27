@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib.widgets import Button, Slider
 from PIL import Image, ImageEnhance
 from skimage import exposure
+from matplotlib.figure import Figure
 
 # Assuming data_manager.py contains these classes
 # from data_manager import DataManager, DataManagerNavigator
@@ -45,11 +46,11 @@ class PlotObject:
 
         # 1. Rescale intensity for better contrast
         p2, p98 = np.percentile(image_data, (2, 98))
-        #rescaled_img = exposure.rescale_intensity(image_data, in_range=(p2, p98))
+        # rescaled_img = exposure.rescale_intensity(image_data, in_range=(p2, p98))
 
         # 2. Convert to PIL Image for further enhancement
         # Correctly use the rescaled image data for enhancement
-        #pil_img = Image.fromarray(rescaled_img.astype(np.uint8), mode="L")
+        # pil_img = Image.fromarray(rescaled_img.astype(np.uint8), mode="L")
 
         # 3. Apply contrast enhancement
         # enhancer = ImageEnhance.Contrast(pil_img)
@@ -58,7 +59,7 @@ class PlotObject:
         # 4. Plotting on the provided axis
         ax.imshow(image_data, cmap="gray")  # Use 'gray' for grayscale images
         masked_data = np.ma.masked_where(mask_data == 0, mask_data)
-        
+
         mask_artist = ax.imshow(
             masked_data, alpha=alpha, cmap="viridis", visible=self.mask_visibility
         )
@@ -94,6 +95,12 @@ class PlotObject:
         self.figure.tight_layout(pad=1.0, w_pad=0.1, h_pad=0.1)
         self.canvas.draw_idle()
 
+    def plot_image(
+        self,
+    ):
+        self.canvas.figure = self.figure
+        self.canvas.draw_idle()
+
     def set_mask_visibility(self, visible):
         """
         Sets the mask visibility state and updates the plot.
@@ -103,20 +110,16 @@ class PlotObject:
         for artist in self.mask_artists:
             artist.set_visible(self.mask_visibility)
 
-
         if self.canvas:
             self.canvas.draw_idle()
 
 
 class PlotManager:
-    def __init__(self, datamanager_navigator, shared_figure, shared_canvas):
-        self.fig = shared_figure
+    def __init__(self, shared_canvas, datamanager_navigator):
         self.canvas = shared_canvas
         self.datamanager_navigator = datamanager_navigator
         self.cache = OrderedDict()  # A standard dictionary is often sufficient
         self.active_plot_instance = None
-
-        self.fig.clear()
         self.canvas.draw_idle()
 
     def display_plot(self):
@@ -133,7 +136,7 @@ class PlotManager:
             print(plot_obj)
             print("this is the shape of image and mask")
             print(plot_obj.image.shape, plot_obj.mask.shape)
-            plot_obj.visualize_all_image_and_mask()
+            plot_obj.plot_image()
         else:
             # Assuming the navigator has a method to get data by index
             # This part needs to be adapted to your DataManagerNavigator's API
@@ -141,9 +144,12 @@ class PlotManager:
             print("not found in cach, adding in caceh from postioin", index)
 
             print(image.shape, mask.shape)
-            
+
             # Create a new plot object, which will automatically draw on the figure
-            plot_obj = PlotObject(image, mask, self.fig, self.canvas)
+            figure = Figure(figsize=(15, 15))
+            plot_obj = PlotObject(image, mask, figure, self.canvas)
+            plot_obj.visualize_all_image_and_mask()
+
             self.cache[index] = plot_obj
 
         self.active_plot_instance = plot_obj
@@ -154,8 +160,6 @@ class PlotManager:
         """Toggles the mask visibility of the currently active plot."""
         if self.active_plot_instance:
             self.active_plot_instance.set_mask_visibility(is_visible)
-        
-
 
         else:
             print("No active plot to toggle mask visibility.")
