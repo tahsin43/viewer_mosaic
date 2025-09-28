@@ -1,4 +1,3 @@
-# 1. Consolidated and corrected imports
 import math
 from collections import defaultdict
 from pathlib import Path
@@ -12,18 +11,17 @@ from PIL import Image, ImageEnhance
 from skimage import exposure
 from matplotlib.figure import Figure
 
-# Assuming data_manager.py contains these classes
+
 # from data_manager import DataManager, DataManagerNavigator
-
-
+# Assuming data_manager.py contains these classes
 class PlotObject:
-    def __init__(self, image, mask, figure, canvas):
+    def __init__(self, image, mask, figure, savedir):
         self.image = image
         self.mask = mask
         self.figure = figure
-        self.canvas = canvas
         self.mask_artists = []  # Changed to plural for clarity
         self.mask_visibility = True  # Default state
+        self.savedir = savedir
 
         # The object now draws itself upon creation
         self.visualize_all_image_and_mask()
@@ -93,72 +91,6 @@ class PlotObject:
             axes[j].axis("off")
 
         self.figure.tight_layout(pad=1.0, w_pad=0.1, h_pad=0.1)
+        self.figure.savefig(self.savedir)
 
     #   self.canvas.draw_idle()
-
-    def plot_image(
-        self,
-    ):
-        self.canvas.figure = self.figure
-        self.canvas.draw_idle()
-
-    def set_mask_visibility(self, visible):
-        """
-        Sets the mask visibility state and updates the plot.
-        """
-        self.mask_visibility = visible
-        # Iterate through all mask artists for this plot object
-        for artist in self.mask_artists:
-            artist.set_visible(self.mask_visibility)
-
-        if self.canvas:
-            self.canvas.draw_idle()
-
-
-class PlotManager:
-    def __init__(self, shared_canvas, datamanager_navigator):
-        self.canvas = shared_canvas
-        self.datamanager_navigator = datamanager_navigator
-        self.cache = OrderedDict()  # A standard dictionary is often sufficient
-        self.active_plot_instance = None
-
-    def display_plot(self):
-        """
-        Main method to display a plot.
-        Fetches from cache or creates a new PlotObject and displays it.
-        """
-        index = self.datamanager_navigator.position
-
-        print("this is the index in PlotMAnager", index)
-        if index in self.cache:
-            print("found in cahce")
-            plot_obj = self.cache[index]
-            print(plot_obj)
-            print("this is the shape of image and mask")
-            print(plot_obj.image.shape, plot_obj.mask.shape)
-            plot_obj.plot_image()
-        else:
-            # Assuming the navigator has a method to get data by index
-            # This part needs to be adapted to your DataManagerNavigator's API
-            image, mask = self.datamanager_navigator.current()
-            print("not found in cach, adding in caceh from postioin", index)
-
-            print(image.shape, mask.shape)
-
-            # Create a new plot object, which will automatically draw on the figure
-            figure = Figure(figsize=(15, 15))
-            plot_obj = PlotObject(image, mask, figure, self.canvas)
-            plot_obj.visualize_all_image_and_mask()
-
-            self.cache[index] = plot_obj
-
-        self.active_plot_instance = plot_obj
-        # The plot object's __init__ already handles drawing, but an explicit redraw can be good
-
-    def toggle_mask_visibility(self, is_visible):
-        """Toggles the mask visibility of the currently active plot."""
-        if self.active_plot_instance:
-            self.active_plot_instance.set_mask_visibility(is_visible)
-
-        else:
-            print("No active plot to toggle mask visibility.")
