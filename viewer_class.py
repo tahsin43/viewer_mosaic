@@ -24,6 +24,7 @@ from Plot_manager import PlotManager
 from data_manager import DataManager, DataManagerNavigator
 from miniWidget import MiniWidget
 import miniWidget
+import pyqtgraph as pg
 
 
 class matplot_viewer(QMainWindow):
@@ -64,12 +65,14 @@ class matplot_viewer(QMainWindow):
         self.layout.addWidget(self.file_widget, 0, 0)
 
         # Fig 1
-        self.fig1 = Figure(figsize=(15, 15))
-        self.canvas1 = FigureCanvas(self.fig1)
+        self.plot.widget = pg.PlotWidget
+        self.plot_widget.setBackground("w")
+
+        self.main_container = pg.GraphicsLayoutWidget()
 
         self.toolbar1 = NavigationToolbar(self.canvas1, self.main_window)
         self.layout.addWidget(self.toolbar1, 0, 1)
-        self.layout.addWidget(self.canvas1, 1, 1)
+        self.layout.addWidget(self.main_container, 1, 1)
 
         self.push_button = QPushButton(" toggle visibility ")
 
@@ -128,7 +131,7 @@ class matplot_viewer(QMainWindow):
             self.dir_path = Path(dir_path)
             self.data_Manager, self.data_Navigator = self.set_up_Data_Manager(dir_path)
             self.add_manifest_box()
-            self.PlotManager = PlotManager(self.canvas1,self.data_Navigator)
+            self.PlotManager = PlotManager(self.canvas1, self.data_Navigator)
 
             self.PlotManager.display_plot()
 
