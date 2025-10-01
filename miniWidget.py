@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 
 
 class MiniWidget(QWidget):
-    clicked = pyqtSignal()
+    clicked = pyqtSignal(int)
 
     def __init__(self, text):
         super().__init__()
@@ -11,6 +11,7 @@ class MiniWidget(QWidget):
         self.text = text
         self.setStyleSheet("background: lightblue; border: 1px solid blue;")
         self.index = text
+
         self.layout = QVBoxLayout()
 
         # Create a label to display the text and center it
@@ -22,14 +23,7 @@ class MiniWidget(QWidget):
 
         # Set the layout for this MiniWidget
         self.setLayout(self.layout)
+        self.index=int(self.index)
 
     def mousePressEvent(self, event):
-        pass
-        # if event.button() == Qt.LeftButton:
-        #     self.clicked.emit()  # Handle clicks
-
-    #
-
-    def mouseMoveEvent(self, event):
-        # Implement dragging logic here
-        pass
+        self.clicked.emit(self.index)
