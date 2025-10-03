@@ -1,3 +1,5 @@
+import DroppablePlotWidget
+from PlotNavigator import PlotNavigator, data_manager, SliceRenderer
 import sys
 from PyQt5.QtCore import Qt, QObject, pyqtSignal
 import data_manager
@@ -40,7 +42,7 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QLabel,
 )
-
+from DroppablePlotWidget import DroppablePlotWidget
 
 import pyqtgraph as pg
 
@@ -48,147 +50,25 @@ pg.setConfigOption("imageAxisOrder", "row-major")
 pg.setConfigOptions(useOpenGL=True)
 
 
-@dataclass
-class ImageData:
-    vol_item: np.ndarray
-    mask_item: np.ndarray
-    visible: bool = True  # Add default value with type annotation
-    mask_imageItem = []
-
-
-class PlotNavigator(QObject):
-    position_changed = pyqtSignal(int)
-
-    def __init__(self, data_manager: DataManager, win):
-        super().__init__()
-        self.data_manager = data_manager
-        self.win = win
-        self._position = 0  # Start at the first __getitem__
-        data_len = len(data_manager)
-        # self.imageDatas: List[ImageData] = [None] * data_len  # Preallocate list
-        self.current_mask = None
-        self.visible = True
-
-    @property
-    def position(self):
-        """Returns the current index."""
-        return self._position
-
-    def _clear_display(self):
-        self.win.clear()  # This removes all items from the layout
-
-        # Also clear the current_mask reference
-        if self.current_mask is not None:
-            self.current_mask.mask_imageItem.clear()
-            self.current_mask = None
-
-    def current(self):
-        self._clear_display()
-        vol, seg = self.load_data()
-        vol_array, seg_array = vol, seg
-        num_slices = vol_array.shape[0]
-        cols = math.ceil(math.sqrt(num_slices))
-        renderer = SliceRenderer(win, cols)
-        image_data = renderer.render_volume_slices(vol_array, seg_array)
-        self.current_mask = image_data
-        # we will store cache later, lets just get next and back working
-        return self.current_mask
-
-    def load_data(self):
-        vol, seg = self.data_manager[self._position]
-        return vol, seg
-
-    def next(self):
-        self.current_mask = None
-
-        """Moves to the next item and returns it."""
-        if self._position >= len(self.data_manager) - 1:
-            self._position = 0
-            self.position_changed.emit(self._position)
-            return self.current()
-        self._position += 1
-        self.position_changed.emit(self._position)
-        return self.current()
-
-    def back(self):
-        """Moves to the previous item and returns it."""
-        self.current_mask = None
-        if self._position <= 0:
-            self._position = len(self.data_manager) - 1
-            self.position_changed.emit(self._position)  # ← Emit signal!
-            return self.current()
-        self.position_changed.emit(self._position)  # ← Emit signal!
-        self._position -= 1
-
-        return self.current()
-
-    def getImagedata(self):
-        return self.current_mask
-
-    def goto(self, index):
-        self.current_mask = None
-
-        self._position = index
-        self.position_changed.emit(self._position)  # ← Emit signal!
-        return self.current()
-
-
-class SliceRenderer:
-    """Handles all the plotting/rendering logic"""
-
-    def __init__(
-        self,
-        win: pg.GraphicsLayoutWidget,
-        cols: int = 5,
-    ):
-        self.win = win
-        self.cols = cols
-
-    def render_volume_slices(self, vol_array: np.ndarray, seg_array: np.ndarray):
-        """Creates ImageData with all rendered slices"""
-
-        image_data = ImageData(vol_array, seg_array)
-
-        image_data.visible = True
-
-        # Clear existing plots
-        num_slices = vol_array.shape[0]
-        for i in range(num_slices):
-            row = i // self.cols
-            col = i % self.cols
-            vb = self.win.addViewBox(row=row, col=col)
-
-            # Volume image
-            # store list in image_data
-
-            img_item = pg.ImageItem(np.flip(vol_array[i, :, :], 0))
-            vb.addItem(img_item)
-            vb.setAspectLocked(True)
-            shape = seg_array.shape
-
-            # Mask overlay
-            mask_array = np.flip(seg_array[i], 0)
-            rgba_mask = np.zeros((shape[1], shape[2], 4), dtype=np.ubyte)
-            rgba_mask[..., 0] = 255  # RED
-            rgba_mask[..., 1] = 0  # GREEN
-            rgba_mask[..., 2] = 0  # BLUE
-            rgba_mask[..., 3] = (mask_array * 120).astype(np.ubyte)  # ALPHA
-
-            mask_item = pg.ImageItem(rgba_mask)
-            vb.addItem(mask_item)
-            image_data.mask_imageItem.append(mask_item)
-            self.current_mask = image_data.mask_imageItem
-
-
 app = QtWidgets.QApplication([])
 main = QtWidgets.QWidget()
 layout = QtWidgets.QVBoxLayout()
+layout_graph2 = QtWidgets.QVBoxLayout()
 hlayout = QtWidgets.QHBoxLayout()
 output_label = QLabel("Index 0")
+output_label2=QLabel("NONE")
 
 layout.addWidget(output_label)
-win = pg.GraphicsLayoutWidget()
+layout_graph2.addWidget(output_label2)
+
+# win = pg.GraphicsLayoutWidget()
+# win2 = pg.GraphicsLayoutWidget()
+win = DroppablePlotWidget()
+win2 = DroppablePlotWidget()
+
+
 layout.addWidget(win)
+layout_graph2.addWidget(win2)
 
 
 # Example masks: binary numpy arrays for each slice
@@ -204,33 +84,23 @@ except ValueError:
     sys.exit(1)
 
 renderer = SliceRenderer(win)
-navigator = PlotNavigator(data, win)
+navigator = PlotNavigator(data, win,renderer)
 navigator.position_changed.connect(
     lambda pos: output_label.setText(f"Index Position {pos} !")
 )
-
 navigator.current()
 
+# navigaotr2
+try:
+    data2 = DataManager(root_dir)
+except ValueError:
+    sys.exit(1)
 
-def toggle_all_masks():
-    current_data = navigator.visible
-    new_visible_state = naviagor.visiblee
-    current_data.visible = new_visible_state
+renderer2 = SliceRenderer(win2)
+navigator2 = PlotNavigator(data2, win2,renderer2)
 
-    # Apply the new state to all mask items
-    #
-    for mask in current_data:
-        mask.setVisible(new_visible_state)
-
-    print(f"New visible state: {new_visible_state}")
-
-
-def next_volume():
-    navigator.next()
-
-
-def prev_volume():
-    navigator.back()
+navigator2.position_changed.connect(
+    lambda pos: output_label2.setText(f"Index Position {pos} !"))
 
 
 def add_manifest_box(masterlayout, manifest):
@@ -245,7 +115,7 @@ def add_manifest_box(masterlayout, manifest):
         mini = MiniWidget(str(item))
         layout.addWidget(mini)
 
-        mini.clicked.connect(navigator.goto)
+        # mini.clicked.connect(navigator.goto)
 
     widget.setLayout(layout)
     masterlayout.addWidget(widget)
@@ -255,19 +125,44 @@ toggle_button = QtWidgets.QPushButton("Toggle Masks")
 next_button = QtWidgets.QPushButton("Next Volume")
 prev_button = QtWidgets.QPushButton("Previous Volume")
 
+toggle_button2 = QtWidgets.QPushButton("Toggle Masks")
+next_button2 = QtWidgets.QPushButton("Next Volume")
+prev_button2 = QtWidgets.QPushButton("Previous Volume")
 
+
+# MANIFEST LOGIC
 h_layout_manifest = QtWidgets.QVBoxLayout()
 add_manifest_box(h_layout_manifest, navigator.data_manager.manifest)
 hlayout.addLayout(h_layout_manifest)
 
+# for layout1
 layout.addWidget(toggle_button)
 layout.addWidget(next_button)
 layout.addWidget(prev_button)
 
-toggle_button.clicked.connect(toggle_all_masks)
-next_button.clicked.connect(next_volume)
-prev_button.clicked.connect(prev_volume)
+# for layout2
+layout_graph2.addWidget(toggle_button2)
+layout_graph2.addWidget(next_button2)
+layout_graph2.addWidget(prev_button2)
+
+
+toggle_button.clicked.connect(navigator.toggle_all_masks)
+next_button.clicked.connect(navigator.next)
+prev_button.clicked.connect(navigator.back)
+
+
+toggle_button2.clicked.connect(navigator2.toggle_all_masks)
+next_button2.clicked.connect(navigator2.next)
+prev_button2.clicked.connect(navigator2.back)
+
+
+win.slice_dropped.connect(navigator.goto)
+win2.slice_dropped.connect(navigator2.goto)
+
+
 hlayout.addLayout(layout)
+hlayout.addLayout(layout_graph2)
+
 main.setLayout(hlayout)
 main.show()
 app.exec_()
