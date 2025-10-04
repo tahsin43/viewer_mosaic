@@ -46,6 +46,7 @@ class DroppablePlotWidget(pg.GraphicsLayoutWidget):
         print(f"DroppablePlot received slice {slice_index}")
 
         # Send out MY signal to tell everyone about the drop
+        self.slice_index=slice_index
         self.slice_dropped.emit(self.slice_index)
 
         # Tell Qt the drop was successful
