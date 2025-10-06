@@ -130,6 +130,49 @@ next_button2 = QtWidgets.QPushButton("Next Volume")
 prev_button2 = QtWidgets.QPushButton("Previous Volume")
 
 
+reload_button=QtWidgets.QPushButton("Reload Data")
+reload_button.clicked.connect(reload_manifest)
+
+insert_data=QtWidgets.QPushButton("Add new label data")
+
+
+
+
+# def reload_manifest():
+#     print("--- Reloading UI ---")
+    
+#     # Clear all widgets from the manifest layout
+#     while h_layout_manifest.count():
+#         child = h_layout_manifest.takeAt(0)
+#         if child.widget():
+#             child.widget().deleteLater()
+    
+#     # Reload the data manager (if needed)
+#     try:
+#         global data, navigator
+#         data = DataManager(root_dir)
+#         navigator.data_manager = data  # Update the navigator's data manager
+#     except ValueError:
+#         print("Error reloading data")
+#         return
+    
+#     # Recreate the manifest box with updated data
+#     add_manifest_box(h_layout_manifest, navigator.data_manager.manifest)
+#     print("Manifest widgets reloaded successfully")
+
+
+# def add_new_data():
+#     text, ok = QInputDialog.getText(main, 'Add New Label', 'Enter label name:')
+#     if ok and text:
+#         print(f"Adding new label: {text}")
+#         # Add your logic here to add the new label to the data manager
+#         # Then reload the manifest
+#         reload_manifest()
+
+
+
+
+
 # MANIFEST LOGIC
 h_layout_manifest = QtWidgets.QVBoxLayout()
 add_manifest_box(h_layout_manifest, navigator.data_manager.manifest)
