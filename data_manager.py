@@ -1,6 +1,8 @@
 from pathlib import Path
 import nrrd
 import re
+from PyQt5.QtCore import QObject, pyqtSignal
+
 
 
 class DataManager:
